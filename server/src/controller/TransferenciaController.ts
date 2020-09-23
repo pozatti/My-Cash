@@ -9,7 +9,7 @@ export default class TransferenciaController {
             id_conta_creditada
         } = request.body;
 
-        const trx = await db.transaction();       
+        const trx = await db.transaction();
 
         try {
             await trx('transferencia').insert({
@@ -19,12 +19,12 @@ export default class TransferenciaController {
             });
 
             await trx('contas')
-                .where('id_conta', '=', id_conta_creditada)
+                .where('id_conta', id_conta_creditada)
                 .increment('saldo', valor)
 
 
             await trx('contas')
-                .where('id_conta', '=', id_conta_debitada)
+                .where('id_conta', id_conta_debitada)
                 .decrement('saldo', valor)
 
             await trx.commit();
@@ -40,6 +40,26 @@ export default class TransferenciaController {
     }
 
     async index(request: Request, response: Response) {
+        /*   try {
+              
+          } catch (err) {
+              return response.status(400).json({
+                  erro: "Erro ao listar as tranferencias!!!"
+              });
+          } */
 
+        var contaDebitada = await db.select('contas.nome as Conta Debitada')
+            .from('transferencia')
+            .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta')
+
+        const trasnfs = await db.select(
+            'transferencia.valor',
+            'contas.nome as Conta Creditada')
+            .from('transferencia')
+            .join('contas', 'transferencia.id_conta_creditada', '=', 'contas.id_conta')
+
+
+        console.log(trasnfs, contaDebitada);
+        return response.status(201).json(trasnfs);
     }
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import db from '../database/connection';
 
+
 export default class TransferenciaController {
     async create(request: Request, response: Response) {
         const {
@@ -40,26 +41,36 @@ export default class TransferenciaController {
     }
 
     async index(request: Request, response: Response) {
-        /*   try {
-              
-          } catch (err) {
-              return response.status(400).json({
-                  erro: "Erro ao listar as tranferencias!!!"
-              });
-          } */
 
-        var contaDebitada = await db.select('contas.nome as Conta Debitada')
-            .from('transferencia')
-            .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta')
+        try {
+            const contaCreditada = await db.select('contas.nome')
+                .from('transferencia')
+                .join('contas', 'transferencia.id_conta_creditada', '=', 'contas.id_conta');
 
-        const trasnfs = await db.select(
-            'transferencia.valor',
-            'contas.nome as Conta Creditada')
-            .from('transferencia')
+            const trasnfs = await db.select(['transferencia.valor', { debitada: 'contas.nome' }])
+                .from('transferencia')
+                .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta');
+
+            const serializedTransfer = contaCreditada.map(list => {
+                return {
+                    total: [...trasnfs, list.nome]
+                }
+            });
+
+            console.log(serializedTransfer);
+            return response.status(201).json({ listTransfer: serializedTransfer });
+        } catch (err) {
+            return response.status(400).json({
+                erro: "Erro ao listar as tranferencias!!!"
+            });
+        }
+        /* const trasnfs = await db('transferencia').whereExists(function () {
+            this.select({ debitada: 'contas.nome' })
+                .from('transferencia')
+                .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta')
+
+        })
             .join('contas', 'transferencia.id_conta_creditada', '=', 'contas.id_conta')
-
-
-        console.log(trasnfs, contaDebitada);
-        return response.status(201).json(trasnfs);
+            .select({ creditada: 'contas.nome' }, 'transferencia.valor') */
     }
 }

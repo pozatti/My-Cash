@@ -43,11 +43,12 @@ export default class TransferenciaController {
     async index(request: Request, response: Response) {
 
         try {
+
             const contaCreditada = await db.select('contas.nome')
                 .from('transferencia')
                 .join('contas', 'transferencia.id_conta_creditada', '=', 'contas.id_conta');
 
-            const trasnfs = await db.select(['transferencia.valor', { debitada: 'contas.nome' }])
+            const trasnfs = await db.select('transferencia.valor', { debitada: 'contas.nome' })
                 .from('transferencia')
                 .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta');
 
@@ -57,20 +58,13 @@ export default class TransferenciaController {
                 }
             });
 
-            console.log(serializedTransfer);
+            console.log(trasnfs);
             return response.status(201).json({ listTransfer: serializedTransfer });
+
         } catch (err) {
             return response.status(400).json({
                 erro: "Erro ao listar as tranferencias!!!"
             });
         }
-        /* const trasnfs = await db('transferencia').whereExists(function () {
-            this.select({ debitada: 'contas.nome' })
-                .from('transferencia')
-                .join('contas', 'transferencia.id_conta_debitada', '=', 'contas.id_conta')
-
-        })
-            .join('contas', 'transferencia.id_conta_creditada', '=', 'contas.id_conta')
-            .select({ creditada: 'contas.nome' }, 'transferencia.valor') */
     }
 }
